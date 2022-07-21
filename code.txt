@@ -1,0 +1,69 @@
+// the starting of code
+// including the required library for th functionong of the 16X2 LCD
+#include <LiquidCrystal.h>
+LiquidCrystal lcd(2,3,4,5,6,7);    // defining the pins required in the circuit for the working of the LCD
+int temperature_Pin = A0;   // defining the output pin of LM35 Temperature IC
+int fan = 11;       // defining the pin where the fan is
+int buzzer = 12;    // defining the buzzer pin
+int temperature;
+int temperature_Min = 30;   // defining the temperature when fan needs to start
+int temperature_Max = 50;   // Defining the maximum temperature when fan speed reaches at 100%
+int fan_Speed;  // defining a variable
+int fan_LCD;    // defining a variable
+
+// the setup function of the Arduino code
+
+void setup() {     // defining the pin whether it is input or output
+  pinMode(fan, OUTPUT);    
+  pinMode(buzzer, OUTPUT);
+  pinMode(temperature_Pin, INPUT);
+  lcd.begin(16,2);  // setting the cursor of 16X2 LED
+  lcd.setCursor(5,0);    
+  lcd.print("WELCOME");    // printing first words on 16X2 LCD display
+  lcd.setCursor(4,1);
+  lcd.print("20UEC020");   // printing the roll no.
+  delay(2000);
+  lcd.clear();    // clearing the display
+}
+
+// the loop function of the Arduino code
+ 
+void loop() {  
+   temperature = readTemp();     // reading the temperature from LM35 IC
+   
+   if((temperature >= temperature_Min) && (temperature <= temperature_Max)) {  // if temperature is higher than minimum temp
+       fan_Speed = map(temperature, temperature_Min, temperature_Max, 32, 255); // the actual speed of fan
+       fan_LCD = map(temperature, temperature_Min, temperature_Max, 0, 100);  // speed of fan to display on LCD
+       analogWrite(fan, fan_Speed);  // spin the fan at the fanSpeed speed
+   } 
+
+   if(temperature < temperature_Min) {   // if temp is lower than minimum temp
+    fan_Speed = 0;      // fan is not spinning
+    fan_LCD = 0; 
+    digitalWrite(fan, LOW);       // giving the digital value to fan
+   } 
+   
+   if(temperature > temperature_Max) {        // if temp is higher than tempMax
+    digitalWrite(fan, HIGH); 
+    digitalWrite(buzzer, HIGH);  // turn on buzzer
+   } else {                    // else turn of bubber
+     digitalWrite(buzzer, LOW);    // giving the digital value to buzzer
+   }
+   
+   lcd.setCursor(0,0);    // setting the cursor of 16X2 LED
+   lcd.print("Temperature:");
+   lcd.print(temperature); // display the temperature
+   lcd.write(223); // the degree sign is given by this command
+   lcd.print("C  ");
+   
+   lcd.setCursor(0,1); // move cursor to next line
+   lcd.print("Fan Speed:");
+   lcd.print(fan_LCD); // display the fan speed
+   lcd.print("%   ");
+   delay(200);
+}
+ 
+int readTemp() {  // get the temperature and convert it to celsius
+  temperature = analogRead(temperature_Pin);
+  return temperature * 0.48828125;   // returning the required temperature
+}
